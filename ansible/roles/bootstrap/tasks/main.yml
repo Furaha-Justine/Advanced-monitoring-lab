@@ -1,0 +1,12 @@
+---
+- name: Install build dependencies
+  ansible.builtin.raw: yum install -y gcc openssl-devel bzip2-devel libffi-devel zlib-devel wget
+
+- name: Download Python 3.9
+  ansible.builtin.raw: test -f /tmp/Python-3.9.18.tgz || wget -q https://www.python.org/ftp/python/3.9.18/Python-3.9.18.tgz -O /tmp/Python-3.9.18.tgz
+
+- name: Extract Python 3.9
+  ansible.builtin.raw: test -d /tmp/Python-3.9.18 || tar -xzf /tmp/Python-3.9.18.tgz -C /tmp/
+
+- name: Build and install Python 3.9
+  ansible.builtin.raw: test -f /usr/local/bin/python3.9 || (cd /tmp/Python-3.9.18 && ./configure --enable-optimizations && make altinstall)

@@ -1,0 +1,43 @@
+---
+- name: Update yum packages
+  ansible.builtin.raw: yum update -y
+
+- name: Install Docker via amazon-linux-extras
+  ansible.builtin.command:
+    cmd: amazon-linux-extras install docker -y
+    creates: /usr/bin/docker
+
+- name: Start and enable Docker service
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Add ec2-user to docker group
+  ansible.builtin.user:
+    name: ec2-user
+    groups: docker
+    append: true
+
+- name: Refresh SSH connection to apply docker group
+  meta: reset_connection
+
+- name: Create Docker CLI plugins directory
+  ansible.builtin.file:
+    path: /usr/local/lib/docker/cli-plugins
+    state: directory
+    mode: "0755"
+
+- name: Install Docker Compose v2
+  ansible.builtin.get_url:
+    url: https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64
+    dest: /usr/local/lib/docker/cli-plugins/docker-compose
+    mode: "0755"
+
+- name: Verify Docker Compose
+  ansible.builtin.command: docker compose version
+  register: compose_version
+
+- name: Print Docker Compose version
+  ansible.builtin.debug:
+    msg: "{{ compose_version.stdout }}"

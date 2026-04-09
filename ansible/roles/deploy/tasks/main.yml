@@ -1,0 +1,48 @@
+---
+- name: Install rsync
+  ansible.builtin.raw: yum install -y rsync
+
+- name: Create app directory
+  ansible.builtin.file:
+    path: /home/ec2-user/app
+    state: directory
+    owner: ec2-user
+    group: ec2-user
+    mode: "0755"
+
+- name: Copy app source files
+  become: false
+  ansible.posix.synchronize:
+    src: "{{ playbook_dir }}/../app/"
+    dest: /home/ec2-user/app/
+    recursive: true
+    delete: true
+
+- name: Run docker compose up
+  ansible.builtin.command:
+    cmd: docker compose up -d --build
+    chdir: /home/ec2-user/app
+
+- name: Wait for app to be ready
+  ansible.builtin.uri:
+    url: "http://localhost:5000"
+    status_code: 200
+  register: app_check
+  retries: 10
+  delay: 10
+  until: app_check.status == 200
+
+- name: Capture docker compose logs
+  ansible.builtin.command:
+    cmd: docker compose logs
+    chdir: /home/ec2-user/app
+  register: compose_logs
+
+- name: Save logs to file
+  ansible.builtin.copy:
+    content: "{{ compose_logs.stdout }}"
+    dest: /home/ec2-user/docker-logs.txt
+
+- name: Print app URL
+  ansible.builtin.debug:
+    msg: "App is live at http://{{ ansible_host }}:5000"

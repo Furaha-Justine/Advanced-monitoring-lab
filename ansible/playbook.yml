@@ -1,0 +1,24 @@
+---
+- name: Bootstrap Python 3.9
+  hosts: app
+  become: true
+  gather_facts: false
+
+  roles:
+    - bootstrap
+
+- name: Install Docker and Docker Compose
+  hosts: app
+  become: true
+  gather_facts: true
+
+  roles:
+    - docker
+
+- name: Deploy Docker Compose App
+  hosts: app
+  become: true
+  gather_facts: true
+
+  roles:
+    - deploy

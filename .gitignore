@@ -1,0 +1,29 @@
+# Terraform
+*.pem
+*.tfstate
+*.tfstate.backup
+*.tfplan
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform-backend/.terraform/
+terraform-backend/.terraform.lock.hcl
+crash.log
+
+# Ansible
+ansible/inventory.ini
+*.retry
+
+# Node.js
+app/web/node_modules/
+app/web/npm-debug.log
+
+# Environment
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
