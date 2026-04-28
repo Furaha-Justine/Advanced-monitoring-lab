@@ -267,7 +267,6 @@ The `screenshots/` folder contains evidence of:
 | `docker: permission denied` | ec2-user not in docker group yet | `meta: reset_connection` after adding user to group |
 | `Connection refused` on wait task | `localhost` resolves to Mac not EC2 | Use `ansible_host` instead of `localhost` in uri module |
 | `No changes` on destroy | Wrong directory | Always run `terraform destroy` from `terraform/` folder |
-| `InvalidBucketName` | Placeholder bucket name in backend | Run `backend-setup/` first, use real bucket name |
 
 ---
 
