@@ -24,6 +24,7 @@
     chdir: /home/ec2-user/app
 
 - name: Wait for app to be ready
+  become: false                     # ← added
   ansible.builtin.uri:
     url: "http://localhost:5000"
     status_code: 200
@@ -39,10 +40,12 @@
   register: compose_logs
 
 - name: Save logs to file
+  become: false                     # ← added
   ansible.builtin.copy:
     content: "{{ compose_logs.stdout }}"
     dest: /home/ec2-user/docker-logs.txt
 
 - name: Print app URL
+  become: false                     # ← added
   ansible.builtin.debug:
     msg: "App is live at http://{{ ansible_host }}:5000"

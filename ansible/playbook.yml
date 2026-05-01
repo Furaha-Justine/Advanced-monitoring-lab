@@ -1,9 +1,8 @@
 ---
 - name: Bootstrap Python 3.9
   hosts: app
-  become: true
+  become: true        # ← was false
   gather_facts: false
-
   roles:
     - bootstrap
 
@@ -11,7 +10,6 @@
   hosts: app
   become: true
   gather_facts: true
-
   roles:
     - docker
 
@@ -19,6 +17,5 @@
   hosts: app
   become: true
   gather_facts: true
-
   roles:
     - deploy
