@@ -1,0 +1,51 @@
+groups:
+  - name: "web_app"
+    interval: 30s
+    rules:
+      # Error rate alert
+      - alert: "HighErrorRate"
+        expr: |
+          (sum(rate(http_errors_total[5m])) / sum(rate(http_requests_total[5m]))) > 0.05
+        for: 10m
+        labels:
+          severity: "critical"
+          component: "web-app"
+        annotations:
+          summary: "High error rate detected (>5%)"
+          description: "Error rate is {{ $value | humanizePercentage }} for the last 5 minutes"
+
+      # Latency alert (p95 > 300ms)
+      - alert: "HighLatency"
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route)) > 0.3
+        for: 10m
+        labels:
+          severity: "warning"
+          component: "web-app"
+        annotations:
+          summary: "High latency detected (p95 > 300ms)"
+          description: "p95 latency is {{ $value | humanizeDuration }} on route {{ $labels.route }}"
+
+      # Service unavailable
+      - alert: "ServiceDown"
+        expr: |
+          up{job="web"} == 0
+        for: 1m
+        labels:
+          severity: "critical"
+          component: "web-app"
+        annotations:
+          summary: "Web service is down"
+          description: "Web service has been unavailable for more than 1 minute"
+
+      # High active connections
+      - alert: "HighActiveConnections"
+        expr: |
+          http_active_connections > 100
+        for: 5m
+        labels:
+          severity: "warning"
+          component: "web-app"
+        annotations:
+          summary: "High number of active connections"
+          description: "{{ $value }} active connections"

@@ -1,0 +1,43 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+  external_labels:
+    cluster: "advanced-monitoring"
+    environment: "local"
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# Load rule files
+rule_files:
+  - "/etc/prometheus/rules/*.yml"
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Web service metrics
+  - job_name: "web"
+    static_configs:
+      - targets: ["web:5000"]
+    metrics_path: "/metrics"
+    scrape_interval: 5s
+    scrape_timeout: 3s
+
+  # Jaeger metrics
+  - job_name: "jaeger"
+    static_configs:
+      - targets: ["jaeger:14269"]
+    scrape_interval: 10s
+
+  # Loki metrics
+  - job_name: "loki"
+    static_configs:
+      - targets: ["loki:3100"]
+    scrape_interval: 10s
