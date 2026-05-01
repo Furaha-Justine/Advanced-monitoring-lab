@@ -19,67 +19,41 @@ scrape_configs:
           __path__: /var/lib/docker/containers/*/*-json.log
 
     pipeline_stages:
-      # Parse JSON log
+      # Parse Docker JSON envelope
       - json:
+          expressions:
+            log: log
+            stream: stream
+            time: time
+
+      # Parse application JSON payload from the Docker "log" field
+      - json:
+          source: log
           expressions:
             message: message
             level: level
             trace_id: trace_id
             span_id: span_id
-            timestamp: timestamp
-            service: service
-
-      # Add labels
-      - labels:
-          level: level
-          service: service
-
-      # Parse timestamp
-      - timestamp:
-          source: timestamp
-          format: "2006-01-02T15:04:05.999Z07:00"
-
-      # Output parsed values
-      - output:
-          source: message
-
-  # Web service container logs
-  - job_name: web-service
-    static_configs:
-      - targets:
-          - localhost
-        labels:
-          job: web-service
-          container: express_app
-          __path__: /var/lib/docker/containers/*express_app*/*-json.log
-
-    pipeline_stages:
-      # Parse JSON log
-      - json:
-          expressions:
-            message: message
-            level: level
-            trace_id: trace_id
-            span_id: span_id
-            timestamp: timestamp
             service: service
             method: method
             path: path
+            route: route
             status_code: status_code
             duration_ms: duration_ms
 
-      # Add labels from parsed values
+      # Add searchable labels
       - labels:
           level: level
           service: service
           method: method
+          route: route
           status_code: status_code
 
-      # Parse timestamp
+      # Use Docker event timestamp
       - timestamp:
-          source: timestamp
-          format: "2006-01-02T15:04:05.999Z07:00"
+          source: time
+          format: RFC3339Nano
 
-      # Output message
+      # Show only the parsed message in Loki logs panel
       - output:
           source: message

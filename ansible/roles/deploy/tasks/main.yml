@@ -26,11 +26,11 @@
 - name: Wait for app to be ready
   become: false                     # ← added
   ansible.builtin.uri:
-    url: "http://localhost:5000"
+    url: "http://127.0.0.1:5000"
     status_code: 200
   register: app_check
-  retries: 10
-  delay: 10
+  retries: 20
+  delay: 15
   until: app_check.status == 200
 
 - name: Capture docker compose logs

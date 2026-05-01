@@ -68,7 +68,7 @@
       "pluginVersion": "9.5.0",
       "targets": [
         {
-          "expr": "(sum(rate(http_errors_total[5m])) / sum(rate(http_requests_total[5m]))) * 100",
+          "expr": "(sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) or vector(0)) / clamp_min(sum(rate(http_requests_total[5m])), 1e-9) * 100",
           "refId": "A"
         }
       ],
@@ -317,7 +317,7 @@
       "pluginVersion": "9.5.0",
       "targets": [
         {
-          "expr": "{job=\"web-service\"} | json",
+          "expr": "{job=\"docker\"} |= \"express-app\"",
           "refId": "A"
         }
       ],
@@ -473,7 +473,7 @@
       "pluginVersion": "9.5.0",
       "targets": [
         {
-          "expr": "sum(rate(http_errors_total[1m])) by (route, method)",
+          "expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[1m])) by (route, method) or on(route, method) (0 * sum(rate(http_requests_total[1m])) by (route, method))",
           "legendFormat": "{{method}} {{route}}",
           "refId": "A"
         }

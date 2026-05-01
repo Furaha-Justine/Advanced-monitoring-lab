@@ -6,10 +6,8 @@ const { getNodeAutoInstrumentations } = require("@opentelemetry/auto-instrumenta
 const { OTLPTraceExporter } = require("@opentelemetry/exporter-trace-otlp-http");
 const { OTLPMetricExporter } = require("@opentelemetry/exporter-metrics-otlp-http");
 const { PeriodicExportingMetricReader } = require("@opentelemetry/sdk-metrics");
-const { HttpInstrumentation } = require("@opentelemetry/instrumentation-http");
-const { ExpressInstrumentation } = require("@opentelemetry/instrumentation-express");
-const { MySQL2Instrumentation } = require("@opentelemetry/instrumentation-mysql2");
-const { MySQLInstrumentation } = require("@opentelemetry/instrumentation-mysql");
+const { resourceFromAttributes } = require("@opentelemetry/resources");
+const { SemanticResourceAttributes } = require("@opentelemetry/semantic-conventions");
 
 const traceExporter = new OTLPTraceExporter({
   url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://jaeger:4318/v1/traces",
@@ -19,21 +17,24 @@ const metricExporter = new OTLPMetricExporter({
   url: process.env.OTEL_EXPORTER_OTLP_METRIC_ENDPOINT || "http://jaeger:4318/v1/metrics",
 });
 
+const resource = resourceFromAttributes({
+  [SemanticResourceAttributes.SERVICE_NAME]: "express-app",
+});
+
 const sdk = new NodeSDK({
+  resource,
   traceExporter,
   metricReader: new PeriodicExportingMetricReader({
     exporter: metricExporter,
   }),
   instrumentations: [
     getNodeAutoInstrumentations({
-      "@opentelemetry/instrumentation-fs": {
-        enabled: false,
-      },
+      "@opentelemetry/instrumentation-fs": { enabled: false },
+      "@opentelemetry/instrumentation-http": { enabled: true },
+      "@opentelemetry/instrumentation-express": { enabled: true },
+      "@opentelemetry/instrumentation-mysql2": { enabled: true },
+      "@opentelemetry/instrumentation-mysql": { enabled: true },
     }),
-    new HttpInstrumentation(),
-    new ExpressInstrumentation(),
-    new MySQL2Instrumentation(),
-    new MySQLInstrumentation(),
   ],
 });
 
