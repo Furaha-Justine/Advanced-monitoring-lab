@@ -62,6 +62,15 @@ resource "aws_vpc_security_group_ingress_rule" "loki" {
   cidr_ipv4         = "0.0.0.0/0"
 }
 
+resource "aws_vpc_security_group_ingress_rule" "alloy" {
+  security_group_id = aws_security_group.this.id
+  description       = "Grafana Alloy"
+  from_port         = 12345
+  to_port           = 12345
+  ip_protocol       = "tcp"
+  cidr_ipv4         = "0.0.0.0/0"
+}
+
 resource "aws_vpc_security_group_ingress_rule" "alertmanager" {
   security_group_id = aws_security_group.this.id
   description       = "Alertmanager"

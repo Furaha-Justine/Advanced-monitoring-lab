@@ -1,6 +1,6 @@
 # Advanced Monitoring — Node.js + MySQL + Full Observability Stack on EC2
 
-> Provision an EC2 instance with Terraform (modules), configure it with Ansible (roles), and deploy a two-tier Node.js + MySQL application with a full observability stack — metrics (Prometheus), logs (Loki + Promtail), traces (Jaeger), alerting (Alertmanager), and dashboards (Grafana) — all via Docker Compose.
+> Provision an EC2 instance with Terraform (modules), configure it with Ansible (roles), and deploy a two-tier Node.js + MySQL application with a full observability stack — metrics (Prometheus), logs (Loki + Grafana Alloy), traces (Jaeger), alerting (Alertmanager), and dashboards (Grafana) — all via Docker Compose.
 
 ![System Design](screenshots/systemdesign.png)
 ---
@@ -37,7 +37,7 @@ aws configure
 │  terraform apply                                                 │
 │    ├── module: keypair       → RSA key pair + .pem file          │
 │    ├── module: security_group → SG with ports 22, 5000, 3000,    │
-│    │                           9090, 9093, 16686, 3100           │
+│    │                           9090, 9093, 16686, 3100, 12345    │
 │    ├── module: ec2           → t3.small Amazon Linux 2           │
 │    └── local_file            → writes ansible/inventory.ini      │
 │                                                                  │
@@ -63,7 +63,7 @@ aws configure
               │  │  Prometheus     :9090     │   │
               │  │  Alertmanager   :9093     │   │
               │  │  Loki           :3100     │   │
-              │  │  Promtail       (sidecar) │   │
+              │  │  Alloy          :12345    │   │
               │  │  Jaeger         :16686    │   │
               │  │  Grafana        :3000     │   │
               │  └───────────────────────────┘   │
@@ -74,7 +74,7 @@ aws configure
 
 - **Metrics** — Prometheus-compatible `/metrics` endpoint using `prom-client` (RED pattern: rate, errors, duration)
 - **Traces** — OpenTelemetry SDK auto-instruments HTTP, Express, and MySQL2; exports to Jaeger via OTLP/HTTP
-- **Logs** — Structured JSON logs via Winston; collected by Promtail and shipped to Loki; each log entry includes `trace_id` and `span_id` for correlation
+- **Logs** — Structured JSON logs via Winston; collected by Grafana Alloy and shipped to Loki; each log entry includes `trace_id` and `span_id` for correlation
 
 ---
 
@@ -87,7 +87,7 @@ aws configure
 | `prometheus`   | `prom/prometheus:latest`        | `9090:9090`               | Metrics scraping + alerting rules |
 | `alertmanager` | `prom/alertmanager:latest`      | `9093:9093`               | Alert routing (critical/warning)  |
 | `loki`         | `grafana/loki:latest`           | `3100:3100`               | Log aggregation and storage       |
-| `promtail`     | `grafana/promtail:latest`       | —                         | Collects Docker container logs    |
+| `alloy`        | `grafana/alloy:latest`          | `12345:12345`             | Collects Docker container logs    |
 | `jaeger`       | `jaegertracing/all-in-one`      | `16686:16686`, `4318:4318`| Distributed tracing UI + OTLP     |
 | `grafana`      | `grafana/grafana:latest`        | `3000:3000`               | Unified dashboard (auto-provisioned) |
 
@@ -118,6 +118,8 @@ All services share a `monitoring` bridge network.
 | `HighActiveConnections`| Active connections > 100           | warning  | 5m     |
 
 Alertmanager routes critical alerts every 5 minutes and warning alerts every 30 minutes.
+
+Grafana Alloy handles log collection and forwards Docker container logs to Loki.
 
 ---
 
@@ -202,6 +204,7 @@ curl http://$IP:5000/health
 | Prometheus   | `http://<ip>:9090`            |
 | Alertmanager | `http://<ip>:9093`            |
 | Jaeger       | `http://<ip>:16686`           |
+| Alloy        | `http://<ip>:12345`           |
 
 ### 8 — Run Load Test
 
@@ -240,7 +243,7 @@ terraform destroy
 | Module           | Resources                                                          |
 |------------------|--------------------------------------------------------------------|
 | `keypair`        | `tls_private_key`, `local_sensitive_file`, `aws_key_pair`          |
-| `security_group` | `aws_security_group`, ingress rules (22, 5000, 3000, 9090, 9093, 16686, 3100), egress rule |
+| `security_group` | `aws_security_group`, ingress rules (22, 5000, 3000, 9090, 9093, 16686, 3100, 12345), egress rule |
 | `ec2`            | `data.aws_ami`, `aws_instance`                                     |
 
 ---
@@ -266,7 +269,7 @@ ssh_connect_command   = "ssh -i docker-app-key.pem ec2-user@x.x.x.x"
 | `docker: permission denied` | ec2-user not in docker group yet | `meta: reset_connection` after adding user to group |
 | `Connection refused` on wait task | `localhost` resolves to Mac not EC2 | Use `ansible_host` instead of `localhost` in uri module |
 | `No changes` on destroy | Wrong directory | Always run `terraform destroy` from `terraform/` folder |
-| Grafana shows no data | Promtail can't read Docker socket | Ensure `/var/run/docker.sock` is mounted and accessible |
+| Grafana shows no data | Alloy can't read Docker container logs | Ensure `/var/lib/docker/containers` is mounted read-only and Alloy runs as `root` |
 | Loki returns `entry too far behind` | Old log samples rejected | Adjust `reject_old_samples_max_age` in `loki-config.yml` |
 
 ---

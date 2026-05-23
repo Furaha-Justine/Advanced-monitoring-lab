@@ -124,16 +124,23 @@ services:
       - monitoring
 
   # ============================================
-  # Log Collector (Promtail)
+  # Log Collector (Grafana Alloy)
   # ============================================
-  promtail:
-    image: grafana/promtail:latest
-    container_name: promtail
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    user: root
+    ports:
+      - "12345:12345"
     volumes:
-      - ./monitoring/loki/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - ./monitoring/alloy/alloy.alloy:/etc/alloy/config.alloy:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: -config.file=/etc/promtail/promtail-config.yml
+      - ./alloy-data:/var/lib/alloy
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy
     restart: unless-stopped
     networks:
       - monitoring

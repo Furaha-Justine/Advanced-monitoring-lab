@@ -1,0 +1,63 @@
+loki.source.file "docker_logs" {
+  targets = [
+    {
+      __path__ = "/var/lib/docker/containers/*/*-json.log"
+      job      = "docker"
+    },
+  ]
+
+  file_match {
+    enabled     = true
+    sync_period = "10s"
+  }
+
+  tail_from_end = true
+  forward_to     = [loki.process.docker_logs.receiver]
+}
+
+loki.process "docker_logs" {
+  forward_to = [loki.write.local.receiver]
+
+  stage.docker {}
+
+  stage.json {
+    source = "log"
+    expressions = {
+      message     = "message"
+      level       = "level"
+      trace_id    = "trace_id"
+      span_id     = "span_id"
+      service     = "service"
+      method      = "method"
+      path        = "path"
+      route       = "route"
+      status_code = "status_code"
+      duration_ms = "duration_ms"
+    }
+  }
+
+  stage.labels {
+    values = {
+      level       = "level"
+      service     = "service"
+      method      = "method"
+      route       = "route"
+      status_code = "status_code"
+    }
+  }
+
+  stage.timestamp {
+    source = "time"
+    format = "RFC3339Nano"
+  }
+
+  stage.output {
+    source = "message"
+  }
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

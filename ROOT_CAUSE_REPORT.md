@@ -7,7 +7,7 @@ This report maps a user-visible symptom to the evidence found in metrics, traces
 - Application: Node.js/Express + MySQL
 - Traces: OpenTelemetry → Jaeger
 - Metrics: Prometheus → Grafana
-- Logs: Winston JSON logs → Promtail → Loki → Grafana
+- Logs: Winston JSON logs → Grafana Alloy → Loki → Grafana
 
 The goal is to show how a single failure can be followed across the observability stack from symptom to trace to root cause.
 
