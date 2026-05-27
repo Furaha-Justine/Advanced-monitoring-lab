@@ -5,14 +5,6 @@ global:
     cluster: "advanced-monitoring"
     environment: "local"
 
-# Alertmanager configuration
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-            - alertmanager:9093
-
-# Load rule files
 rule_files:
   - "/etc/prometheus/rules/*.yml"
 

@@ -71,15 +71,6 @@ resource "aws_vpc_security_group_ingress_rule" "alloy" {
   cidr_ipv4         = "0.0.0.0/0"
 }
 
-resource "aws_vpc_security_group_ingress_rule" "alertmanager" {
-  security_group_id = aws_security_group.this.id
-  description       = "Alertmanager"
-  from_port         = 9093
-  to_port           = 9093
-  ip_protocol       = "tcp"
-  cidr_ipv4         = "0.0.0.0/0"
-}
-
 resource "aws_vpc_security_group_egress_rule" "all_outbound" {
   security_group_id = aws_security_group.this.id
   description       = "Allow all outbound"

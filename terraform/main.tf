@@ -16,12 +16,12 @@ terraform {
     }
   }
   backend "s3" {
-  bucket         = "docker-app-tfstate-445567114084"
-  key            = "docker-app/terraform.tfstate"
-  region         = "eu-west-1"
-  dynamodb_table = "docker-app-tfstate-lock"
-  encrypt        = true
-}
+    bucket       = "docker-app-tfstate-673588459780"
+    key          = "docker-app/terraform.tfstate"
+    region       = "eu-west-1"
+    use_lockfile = true
+    encrypt      = true
+  }
 }
 
 provider "aws" {

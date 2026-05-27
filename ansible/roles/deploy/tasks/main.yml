@@ -10,6 +10,13 @@
     group: ec2-user
     mode: "0755"
 
+- name: Ensure app directory ownership is correct
+  ansible.builtin.file:
+    path: /home/ec2-user/app
+    owner: ec2-user
+    group: ec2-user
+    recurse: true
+
 - name: Copy app source files
   become: false
   ansible.posix.synchronize:
@@ -17,6 +24,8 @@
     dest: /home/ec2-user/app/
     recursive: true
     delete: true
+    rsync_opts:
+      - "--exclude=alloy-data/"
 
 - name: Run docker compose up
   ansible.builtin.command:

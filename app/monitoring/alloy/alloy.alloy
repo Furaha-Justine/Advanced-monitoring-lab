@@ -1,8 +1,8 @@
 loki.source.file "docker_logs" {
   targets = [
     {
-      __path__ = "/var/lib/docker/containers/*/*-json.log"
-      job      = "docker"
+      __path__ = "/var/lib/docker/containers/*/*-json.log",
+      job      = "docker",
     },
   ]
 
@@ -23,26 +23,26 @@ loki.process "docker_logs" {
   stage.json {
     source = "log"
     expressions = {
-      message     = "message"
-      level       = "level"
-      trace_id    = "trace_id"
-      span_id     = "span_id"
-      service     = "service"
-      method      = "method"
-      path        = "path"
-      route       = "route"
-      status_code = "status_code"
-      duration_ms = "duration_ms"
+      message     = "message",
+      level       = "level",
+      trace_id    = "trace_id",
+      span_id     = "span_id",
+      service     = "service",
+      method      = "method",
+      path        = "path",
+      route       = "route",
+      status_code = "status_code",
+      duration_ms = "duration_ms",
     }
   }
 
   stage.labels {
     values = {
-      level       = "level"
-      service     = "service"
-      method      = "method"
-      route       = "route"
-      status_code = "status_code"
+      level       = "level",
+      service     = "service",
+      method      = "method",
+      route       = "route",
+      status_code = "status_code",
     }
   }
 

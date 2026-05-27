@@ -1,6 +1,6 @@
 # Advanced Monitoring — Node.js + MySQL + Full Observability Stack on EC2
 
-> Provision an EC2 instance with Terraform (modules), configure it with Ansible (roles), and deploy a two-tier Node.js + MySQL application with a full observability stack — metrics (Prometheus), logs (Loki + Grafana Alloy), traces (Jaeger), alerting (Alertmanager), and dashboards (Grafana) — all via Docker Compose.
+> Provision an EC2 instance with Terraform (modules), configure it with Ansible (roles), and deploy a two-tier Node.js + MySQL application with a full observability stack — metrics (Prometheus), logs (Loki + Grafana Alloy), traces (Jaeger), and dashboards (Grafana) — all via Docker Compose.
 
 ![System Design](screenshots/systemdesign.png)
 ---
@@ -37,7 +37,7 @@ aws configure
 │  terraform apply                                                 │
 │    ├── module: keypair       → RSA key pair + .pem file          │
 │    ├── module: security_group → SG with ports 22, 5000, 3000,    │
-│    │                           9090, 9093, 16686, 3100, 12345    │
+│    │                           9090, 16686, 3100, 12345          │
 │    ├── module: ec2           → t3.small Amazon Linux 2           │
 │    └── local_file            → writes ansible/inventory.ini      │
 │                                                                  │
@@ -61,7 +61,6 @@ aws configure
               │  ┌───────────────────────────┐   │
               │  │  Observability Stack      │   │
               │  │  Prometheus     :9090     │   │
-              │  │  Alertmanager   :9093     │   │
               │  │  Loki           :3100     │   │
               │  │  Alloy          :12345    │   │
               │  │  Jaeger         :16686    │   │
@@ -69,6 +68,8 @@ aws configure
               │  └───────────────────────────┘   │
               └──────────────────────────────────┘
 ```
+
+> Note: `t3.micro` is too small for the full observability stack. Use `t3.small` or larger for reliable deployment.
 
 **Observability signals produced by the Node.js app:**
 
@@ -84,8 +85,7 @@ aws configure
 |----------------|---------------------------------|---------------------------|-----------------------------------|
 | `web`          | Custom (Node.js 18 Alpine)      | `5000:5000`               | Express REST API + observability  |
 | `db`           | `mysql:8.0`                     | internal `3306`           | MySQL database                    |
-| `prometheus`   | `prom/prometheus:latest`        | `9090:9090`               | Metrics scraping + alerting rules |
-| `alertmanager` | `prom/alertmanager:latest`      | `9093:9093`               | Alert routing (critical/warning)  |
+| `prometheus`   | `prom/prometheus:latest`        | `9090:9090`               | Metrics scraping                  |
 | `loki`         | `grafana/loki:latest`           | `3100:3100`               | Log aggregation and storage       |
 | `alloy`        | `grafana/alloy:latest`          | `12345:12345`             | Collects Docker container logs    |
 | `jaeger`       | `jaegertracing/all-in-one`      | `16686:16686`, `4318:4318`| Distributed tracing UI + OTLP     |
@@ -103,21 +103,10 @@ All services share a `monitoring` bridge network.
 | `GET /users` | GET  | Fetches all users from MySQL                         |
 | `GET /health` | GET | Verifies database connectivity                      |
 | `GET /slow` | GET   | Simulates a slow request (500–2000ms) for latency testing |
-| `GET /error` | GET  | Simulates a 500 error for alert testing              |
+| `GET /error` | GET  | Simulates a 500 error for error-path testing         |
 | `GET /metrics` | GET | Prometheus metrics endpoint                       |
 
 ---
-
-## Prometheus Alert Rules
-
-| Alert                  | Condition                          | Severity | Window |
-|------------------------|------------------------------------|----------|--------|
-| `HighErrorRate`        | Error rate > 5% over 5m            | critical | 10m    |
-| `HighLatency`          | p95 latency > 300ms on any route   | warning  | 10m    |
-| `ServiceDown`          | `up{job="web"} == 0`               | critical | 1m     |
-| `HighActiveConnections`| Active connections > 100           | warning  | 5m     |
-
-Alertmanager routes critical alerts every 5 minutes and warning alerts every 30 minutes.
 
 Grafana Alloy handles log collection and forwards Docker container logs to Loki.
 
@@ -202,7 +191,6 @@ curl http://$IP:5000/health
 |--------------|-------------------------------|
 | Grafana      | `http://<ip>:3000`            |
 | Prometheus   | `http://<ip>:9090`            |
-| Alertmanager | `http://<ip>:9093`            |
 | Jaeger       | `http://<ip>:16686`           |
 | Alloy        | `http://<ip>:12345`           |
 
@@ -213,7 +201,7 @@ cd app/
 ./load-test.sh http://$IP:5000
 ```
 
-This generates traffic across all endpoints to populate Grafana dashboards and trigger alerts.
+This generates traffic across all endpoints to populate Grafana dashboards.
 
 ### 9 — Cleanup
 
@@ -243,7 +231,7 @@ terraform destroy
 | Module           | Resources                                                          |
 |------------------|--------------------------------------------------------------------|
 | `keypair`        | `tls_private_key`, `local_sensitive_file`, `aws_key_pair`          |
-| `security_group` | `aws_security_group`, ingress rules (22, 5000, 3000, 9090, 9093, 16686, 3100, 12345), egress rule |
+| `security_group` | `aws_security_group`, ingress rules (22, 5000, 3000, 9090, 16686, 3100, 12345), egress rule |
 | `ec2`            | `data.aws_ami`, `aws_instance`                                     |
 
 ---
