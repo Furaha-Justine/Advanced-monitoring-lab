@@ -33,3 +33,10 @@ scrape_configs:
     static_configs:
       - targets: ["loki:3100"]
     scrape_interval: 10s
+
+  # Node Exporter (system metrics)
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+    scrape_interval: 10s
+
